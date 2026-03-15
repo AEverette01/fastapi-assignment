@@ -33,6 +33,12 @@ SUMMARY_PROMPT_TEMPLATE = (
     "{max_length} tokens, preserving the main ideas and being factual:\n\n{text}"
 )
 
+DATA_ANALYST_SUMMARY_TEMPLATE = (
+    "Act as a data analyst. Summarize the following text into a small, structured "
+    "report. Highlight the main points, trends, and any notable insights. "
+    "Keep it concise and under {max_length} tokens:\n\n{text}"
+)
+
 SENTIMENT_EXPLANATION_TEMPLATE = (
     "The overall sentiment is **{sentiment}** with confidence {confidence:.2f} "
     "because the text expresses the following cues: {rationale}"
@@ -119,6 +125,33 @@ async def summarize(payload: SummarizeRequest):
     )
 
     # Use a safe default min_length as a fraction of max_length
+    max_len = int(payload.max_length)
+    min_len = max(10, max_len // 4)
+
+    result = summarizer(
+        prompt_text,
+        max_length=max_len,
+        min_length=min_len,
+        do_sample=False,
+    )
+
+    summary_text = result[0]["summary_text"] if result else ""
+    return SummarizeResponse(summary=summary_text)
+
+
+@app.post("/summarize-analyst", response_model=SummarizeResponse)
+async def summarize_analyst(payload: SummarizeRequest):
+    """
+    Data-analyst-style summarization.
+    Uses a different instruction template so you can A/B test prompt variations.
+    """
+    summarizer = get_summarizer()
+
+    prompt_text = DATA_ANALYST_SUMMARY_TEMPLATE.format(
+        text=payload.text,
+        max_length=payload.max_length,
+    )
+
     max_len = int(payload.max_length)
     min_len = max(10, max_len // 4)
 
