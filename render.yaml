@@ -1,0 +1,10 @@
+# Render Blueprint - optional; you can also configure in the Dashboard
+services:
+  - type: web
+    name: fastapi-app
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.4"
